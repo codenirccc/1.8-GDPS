@@ -44,9 +44,9 @@ This fork hardened the endpoints below. Each entry lists the endpoint, why it wa
 - **Fix:** every stat is capped by `$maxStatValues` in `src/config/security.php` (e.g. stars ≤ 1,000,000), and an account may only submit at most 5 score updates per 10 seconds (tracked via `actions` type 9).
 
 ### src/incl/misc/likeGJItem.php (level/comment likes)
-- **Vulnerability:** the `type` parameter was taken from the request and used to pick the `$table` and `$column` in an `UPDATE`. Values outside the expected 1-4 left those variables undefined, which under PHP 8 is a fatal error (request fails) and could otherwise reach the wrong table.
-- **Why it was vulnerable:** the type was never whitelisted before being used in SQL.
-- **Fix:** `type` must now be numeric and in the 1-4 range before any table/column is selected.
+- **Vulnerability:** the `type` parameter was taken from the request and used to pick the `$table` and `$column` in an `UPDATE`. Values outside the expected 1-4 left those variables undefined, which under PHP 8 is a fatal error (request fails) and could otherwise reach the wrong table. Likes were also accepted from any anonymous request, so a bot could mass-like levels/comments without an account.
+- **Why it was vulnerable:** the type was never whitelisted before being used in SQL, and no authentication was required.
+- **Fix:** `type` must now be numeric and in the 1-4 range before any table/column is selected. Likebot prevention: every like/dislike now requires a linked account — either `accountID` + GJP/GJP2 (newer clients) or a `udid` mapped to an account in `userLinks` (1.8 clients). Anonymous requests get `-1`.
 
 ### src/incl/comments/uploadGJComment.php (level comments)
 - **Vulnerability:** two issues. (1) The level-completion percent update reused a query prepared for a `SELECT` and executed it with write parameters, producing "HY093: number of bound variables does not match" under native prepared statements — the update silently failed. (2) `percent` was stored without validation, so a cheated client could post completion percentages outside 0-100.

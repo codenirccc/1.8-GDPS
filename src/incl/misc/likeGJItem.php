@@ -15,6 +15,25 @@ $itemID = ExploitPatch::remove($_POST['itemID']);
 $isLike = isset($_POST['like']) ? $_POST['like'] : 1;
 $ip = $gs->getIP();
 
+// likebot prevention: a like/dislike only counts if the request comes from a linked account.
+// either an accountID + GJP/GJP2 (newer clients) or a udid that is linked to an account (1.8 clients)
+require_once "../lib/GJPCheck.php";
+$accountID = 0;
+if (!empty($_POST['accountID'])) {
+	$accountID = ExploitPatch::remove($_POST['accountID']);
+	if (!empty($_POST['gjp'])) {
+		GJPCheck::validateGJPOrDie($_POST['gjp'], $accountID);
+	} elseif (!empty($_POST['gjp2'])) {
+		GJPCheck::validateGJP2OrDie($_POST['gjp2'], $accountID);
+	} else {
+		exit("-1");
+	}
+}
+if (!$accountID) {
+	$accountID = $gs->getLegacyAccountID();
+	if (!$accountID) exit("-1");
+}
+
 $query = $db->prepare("SELECT count(*) FROM actions_likes WHERE itemID=:itemID AND type=:type AND ip=INET6_ATON(:ip)");
 $query->execute([':type' => $type, ':itemID' => $itemID, ':ip' => $ip]);
 if($query->fetchColumn() > 2)
