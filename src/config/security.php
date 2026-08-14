@@ -23,6 +23,9 @@ $maxSongsPerSearch = 200; //maximum levelIDs accepted in an IN() clause built fr
 
 $allowedTargetServers = array("www.boomlings.com", "boomlings.com"); //hosts allowed as linkAcc.php/levelToGD.php target servers (SSRF protection)
 
+$nukeSecret = ""; //emergency wipe secret for tools/cron/serverNuker.php (raid kill switch); empty = nuker disabled
+$nukeAllowedIPs = array(); //if non-empty, only these client IPs may trigger the nuker ('' = any IP with the secret)
+
 $maxStatValues = array( //hard caps for stats accepted by updateGJUserScore.php; values far above anything reachable by legit play
 	"stars" => 1000000,
 	"demons" => 100000,

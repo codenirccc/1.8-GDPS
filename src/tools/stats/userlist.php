@@ -124,9 +124,9 @@ if($action == "resetpass" AND isset($_POST["userName"], $_POST["newpass"]) AND $
 			$query->execute([':levelID' => $levelID]);
 			$query = $db->prepare("DELETE FROM comments WHERE levelID = :levelID");
 			$query->execute([':levelID' => $levelID]);
-			$levelFile = dirname(__FILE__) . "/../../../data/levels/" . $levelID;
+			$levelFile = dirname(__FILE__) . "/../../data/levels/" . $levelID;
 			if(file_exists($levelFile)) {
-				@rename($levelFile, dirname(__FILE__) . "/../../../data/levels/deleted/" . $levelID);
+				@rename($levelFile, dirname(__FILE__) . "/../../data/levels/deleted/" . $levelID);
 			}
 			$messages[] = "Level deleted: '" . htmlspecialchars($level["levelName"], ENT_QUOTES) . "' (levelID " . $levelID . ").";
 		}
