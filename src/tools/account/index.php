@@ -1,4 +1,6 @@
-<h3>Account Management</h3>
+<?php
+include "../../incl/lib/connection.php";
+?><h3>Account Management</h3>
 <a href="..">Go back to main tools page</a><br><br>
 <?php
 $dirstring = "";

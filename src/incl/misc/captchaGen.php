@@ -1,5 +1,6 @@
 <?php
 session_start();
+include "../lib/connection.php";
 // yoinked from 99webTools
 $code = random_int(1000, 9999);
 $_SESSION["code"] = $code;

@@ -1,4 +1,5 @@
 <?php
+include "../incl/lib/connection.php";
 function listdir($dir){
 	$dirstring = "";
 	$files = scandir($dir);
