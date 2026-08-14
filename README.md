@@ -81,6 +81,13 @@ This fork hardened the endpoints below. Each entry lists the endpoint, why it wa
 - `$maxPage`, `$maxLevelLength`, `$maxSongsPerSearch`, `$maxStatValues` — caps backing the fixes above.
 - `$allowedTargetServers` — whitelist of hosts that `src/tools/linkAcc.php` and `src/tools/levelToGD.php` are allowed to target, preventing server-side request abuse through those tools.
 
+### Proxy/VPN blocking (src/incl/lib/blockProxyVPN.php)
+- **Vulnerability:** anyone could reach the server through a free proxy or a VPN, making IP-based rate limits and bans (login brute-force, like limits, report limits) trivially bypassable.
+- **Fix:** when `$blockFreeProxies` or `$blockCommonVPNs` is enabled in `src/config/security.php`, the client IP (Cloudflare/X-Forwarded-For aware) is checked on every request against:
+  - free proxy IP lists (`$proxies` — fhgdps.com http/https/socks4/socks5/unknown), exact IP match;
+  - VPN and datacenter CIDR lists (`$vpns` — X4BNet `vpn` and `datacenter` IPv4 ranges), covering free and paid VPN providers as well as paid proxies running on hosting IPs.
+- Blocked requests get HTTP 403. Lists are cached in `src/data/proxycache/` (12h refresh, per-IP result cached 10 min) so downloads happen rarely; a download failure falls back to the stale cache and never blocks everyone. Localhost/private/reserved IPs are always allowed.
+
 ### Operational notes
 - The above fixes assume a PHP 7.4+/8.x runtime with `mysqlnd`. After deploying, set `$botSecret` and test a level upload/comment/rate flow.
 - Ownership checks on level deletion (`deleteGJLevelUser.php`), comment deletion (`deleteGJComment.php`) and reporting (`reportGJLevel.php`) were reviewed and were already safe (owner/moderator checks with prepared statements); no change was needed there.

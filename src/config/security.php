@@ -31,3 +31,15 @@ $maxStatValues = array( //hard caps for stats accepted by updateGJUserScore.php;
 	"diamonds" => 100000,
 	"moons" => 100000
 );
+
+$blockFreeProxies = true; // true = check if person uses free proxy
+$blockCommonVPNs = true; // true = check if person uses a common VPN
+// URLs for IPs of proxies
+$proxies['http'] = 'https://fhgdps.com/proxies/http.txt';
+$proxies['https'] = 'https://fhgdps.com/proxies/https.txt';
+$proxies['socks4'] = 'https://fhgdps.com/proxies/socks4.txt';
+$proxies['socks5'] = 'https://fhgdps.com/proxies/socks5.txt';
+$proxies['unknown'] = 'https://fhgdps.com/proxies/unknown.txt';
+// URLs for IP ranges of VPNs (CIDR ranges; covers free and paid providers)
+$vpns['vpn'] = 'https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/vpn/ipv4.txt';
+$vpns['datacenter'] = 'https://raw.githubusercontent.com/X4BNet/lists_vpn/main/output/datacenter/ipv4.txt'; // datacenter/hosting IPs - catches paid VPNs and proxies
