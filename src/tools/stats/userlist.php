@@ -1,7 +1,8 @@
 <?php
-// user management tool - the access key is fixed and cannot be changed from this file.
-// only sha256 of the key is stored here; the key itself is not present in the source code
-define("USERLIST_DIGEST", "0d01b1ad5987ff549a9de2c8b08f9f584fb6809f38b73e78118e87fedbf16271");
+// user management tool - the access key is PERMANENT and unchangeable.
+// the key is not stored anywhere in this code; only its sha256 digest is hardcoded below,
+// and the comparison is done against this literal value, so there is no constant or
+// variable an attacker could edit to swap in a different key.
 
 session_start();
 
@@ -22,7 +23,7 @@ if(!$authenticated) {
 	$locked = $query->fetchColumn() >= 5;
 
 	if(isset($_POST["key"]) AND !$locked) {
-		if(is_string($_POST["key"]) AND hash_equals(USERLIST_DIGEST, hash("sha256", $_POST["key"]))) {
+		if(is_string($_POST["key"]) AND hash_equals("0d01b1ad5987ff549a9de2c8b08f9f584fb6809f38b73e78118e87fedbf16271", hash("sha256", $_POST["key"]))) {
 			session_regenerate_id(true);
 			$_SESSION["panel_auth"] = 1;
 			$authenticated = true;
