@@ -14,7 +14,7 @@ if (isset($_POST["userName"]) AND isset($_POST["password"]) AND isset($_POST["ca
 		echo "Non-existent account. Please try again.";
 	} else {
 		$accountID = $query->fetchColumn();
-		if ($_POST["captcha"] != "" AND $_SESSION["code"] == $_POST["captcha"]) {
+		if ($_POST["captcha"] != "" AND strcasecmp(($_SESSION["code"] ?? ""), $_POST["captcha"]) === 0) {
 			if ($gp->isValid($accountID, $password)) {
 				require_once "../../incl/lib/mainLib.php";
 				$gs = new mainLib();

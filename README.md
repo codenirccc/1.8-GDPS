@@ -59,9 +59,14 @@ This fork hardened the endpoints below. Each entry lists the endpoint, why it wa
 - **Fix:** `!rate` now validates stars 0-10, coins 0-3 and featured 0/1 and replies with a usage error on bad input; missing arguments default via `?? ""`. (`!setacc` / `!sharecp` were also given undefined-index guards.)
 
 ### src/incl/misc/captchaGen.php (registration captcha)
-- **Vulnerability:** the captcha code came from `rand()`, a predictable PRNG. An attacker could reproduce the sequence and bypass registration captcha.
+- **Vulnerability:** the captcha code came from `rand()`, a predictable PRNG, and was a 4-digit number (only 10,000 combinations). An attacker could reproduce the sequence or simply brute-force all combinations to bypass registration captcha.
+- **Why it was vulnerable:** `rand()` output is cryptographically guessable, and a 4-digit space is trivially small.
+- **Fix:** the code is now a random 6-character string (no `0/O`, `1/I/L`) generated character-by-character with `random_int()` (~1 billion combinations), rendered with noise lines. Captcha comparisons in `registerAccount.php` / `generateKey.php` are case-insensitive.
+
+### src/incl/lib/mainLib.php (verification keys)
+- **Vulnerability:** `randomString()`, used by `generateVerificationKey()` for account verification keys, still used `rand()`, a predictable PRNG. An attacker who could reproduce the sequence could forge a verification key and hijack an account link.
 - **Why it was vulnerable:** `rand()` output is cryptographically guessable.
-- **Fix:** switched to `random_int()`.
+- **Fix:** `randomString()` now draws each character with `random_int()`.
 
 ### src/incl/lib/mainLib.php (song reupload / link nexus)
 - **Vulnerability:** `getFileInfo()` / `songReupload()` performed a cURL fetch to an attacker-supplied URL. Redirects were followed with no protocol restriction and no response size cap, so a request like `file:///etc/passwd` (or a redirect to it) could read local files, and huge responses could exhaust memory. `setLinkNexusLevel()` wrote its argument straight into the PHP config file `config/linking.php`, which was PHP code injection into server configuration if a non-numeric value ever reached it.
