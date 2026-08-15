@@ -147,6 +147,28 @@ This fork hardened the endpoints below. Each entry lists the endpoint, why it wa
 - **Vulnerability:** multiple admin-facing pages echoed DB data or upstream-server responses raw into HTML (`top24h.php`, `noLogIn.php`, `unlisted.php`, `dailyTable.php`, `packTable.php`, `modActions.php`, and the error/debug output of `linkAcc.php`/`levelToGD.php`), enabling stored/reflected XSS in the admin panel.
 - **Fix:** all echoed dynamic values are wrapped in `htmlspecialchars(... ENT_QUOTES)`.
 
+## DDoS / DoS protection
+
+### Per-IP request rate limiting (src/incl/lib/ratelimit.php)
+- **Vulnerability:** no per-IP limits existed, so a single client (or a small botnet of residential IPs) could hammer any endpoint — level search, leaderboards, downloads, login, uploads — saturating PHP workers and MySQL connections (L7 DoS). Big POST bodies were also fully parsed by PHP regardless of size, enabling memory-exhaustion attacks.
+- **Fix:** a file-based, sliding-window rate limiter runs on **every** request from `src/incl/lib/connection.php`, *before the database connection is opened*, so floods never reach MySQL. Storage is one small file per (IP, bucket) in `src/data/ratelimit/` — no DB writes, no network calls.
+  - **Global limit** (`$rateLimitGlobal`, default 500 req / 60 s per IP) applies to every endpoint.
+  - **Per-endpoint limits** (`$rateLimitEndpoints`) are stricter for hot/costly API endpoints (e.g. level search 30/min, level upload 15/min, level report 15/min, login 30/min with a 5-minute block).
+  - Limits are per-IP only when the IP is real (Cloudflare/X-Forwarded-For aware, same logic as the proxy/VPN blocking).
+  - Exceeded limits return **HTTP 429** with `Retry-After` and body `-1` (a failed request for the game client). Fail-open: if `src/data/ratelimit/` is not writable, requests are allowed and the problem is logged once.
+- **Manual blocklist:** add IPs or CIDR ranges to `src/data/blocked_ips.txt` (one per line, `#` comments) to permanently block a source with HTTP 403.
+
+### Request body size limit (src/incl/lib/connection.php)
+- `$maxRequestBody` (default 10 MB) is enforced via the `Content-Length` header before any processing, returning HTTP 413. Pair with `post_max_size`/`memory_limit` in `php.ini` (see deploy notes below) so oversized bodies are rejected by PHP itself.
+
+### Web layer (src/.htaccess)
+- Sets hardening headers (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`), disables directory listings, blocks `TRACE`/`TRACK`, and rejects common SQLi / path-traversal / XSS signatures in the query string. Every directive is `<IfModule>`-guarded so a missing Apache module never breaks the site; requires `AllowOverride` in your Apache vhost (this repo already ships `.htaccess` files elsewhere). On nginx the file can be deleted (replicate the headers + rate limits in nginx config).
+
+### Deploy notes
+- Application-layer rate limiting mitigates abuse, not a true volumetric DDoS. Put the server behind Cloudflare (this code already reads the real client IP via `CF-Connecting-IP`) or an equivalent anti-DDoS provider, and enable network-layer challenge rules for HTTP/HTTPS. Set `$blockFreeProxies`/`$blockCommonVPNs` (default on) to block proxy/VPN botnets at the source.
+- Recommended `php.ini` values for this codebase: `post_max_size = 12M`, `upload_max_filesize = 12M`, `memory_limit = 128M`, `max_execution_time = 30`, and a FPM `request_terminate_timeout` cap.
+- Tune `$rateLimitGlobal`/`$rateLimitEndpoints` to your player count. Sharing a single IP (NAT/college) can legitimately exceed tight limits, so prefer looser global limits + strict per-endpoint limits over the reverse.
+
 ### Operational notes
 - The above fixes assume a PHP 7.4+/8.x runtime with `mysqlnd`. After deploying, set `$botSecret` and test a level upload/comment/rate flow.
 - Ownership checks on level deletion (`deleteGJLevelUser.php`), comment deletion (`deleteGJComment.php`) and reporting (`reportGJLevel.php`) were reviewed and were already safe (owner/moderator checks with prepared statements); no change was needed there.

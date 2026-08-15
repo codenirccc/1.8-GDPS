@@ -1,0 +1,27 @@
+# 1.8-GDPS web-layer hardening (Apache). Safe to delete on nginx/other servers.
+# All directives are guarded by <IfModule> so a missing module never breaks the site.
+
+Options -Indexes
+
+<IfModule mod_headers.c>
+	Header always set X-Content-Type-Options "nosniff"
+	Header always set X-Frame-Options "SAMEORIGIN"
+	Header always set Referrer-Policy "strict-origin-when-cross-origin"
+	Header always set Permissions-Policy "interest-cohort=()"
+</IfModule>
+
+<IfModule mod_rewrite.c>
+	RewriteEngine On
+
+	# block TRACE / TRACK methods
+	RewriteCond %{REQUEST_METHOD} ^(TRACE|TRACK)$ [NC]
+	RewriteRule .* - [F]
+
+	# block common SQLi / path traversal / XSS signatures in the query string.
+	# Signatures are deliberately narrow to avoid blocking legitimate client requests.
+	RewriteCond %{QUERY_STRING} (\bunion[[:space:]]+(all[[:space:]]+)?select\b|(;|%3[bB])[[:space:]]*(select|insert|update|delete|drop)[[:space:]]) [NC,OR]
+	RewriteCond %{QUERY_STRING} (\.\./|\.\.%2[fF]|\.\.%5[cC]) [NC,OR]
+	RewriteCond %{QUERY_STRING} (<|%3[cC])(script|iframe|object|embed)[[:space:]>/] [NC,OR]
+	RewriteCond %{QUERY_STRING} (onerror|onload)[[:space:]]*=[[:space:]]*["']?[[:space:]]*[a-z] [NC]
+	RewriteRule .* - [F]
+</IfModule>

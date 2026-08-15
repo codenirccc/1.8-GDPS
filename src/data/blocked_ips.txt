@@ -1,0 +1,9 @@
+# Manual IP blocklist for the rate limiter (src/incl/lib/ratelimit.php).
+# One IP or CIDR per line. Lines starting with '#' are ignored.
+# Blocks are permanent until you remove the line. The rate limiter must be enabled
+# ($enableRateLimit = true in src/config/security.php) for this file to be consulted.
+#
+# Example single IP:
+# 1.2.3.4
+# Example CIDR range:
+# 5.6.7.8/24

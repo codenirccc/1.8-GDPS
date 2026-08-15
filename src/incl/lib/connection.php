@@ -1,6 +1,24 @@
 <?php
 include dirname(__FILE__)."/../../config/connection.php";
+require_once dirname(__FILE__)."/../../config/security.php";
 @header('Content-Type: text/html; charset=utf-8');
+
+// DoS/DDoS guards run exactly once per request, even though connection.php is
+// re-included by many mainLib methods for every database access.
+if (!isset($GLOBALS['requestGuardDone'])) {
+	$GLOBALS['requestGuardDone'] = true;
+
+	// oversized request bodies are rejected before anything else (DoS)
+	if (isset($maxRequestBody) && $maxRequestBody > 0 && isset($_SERVER['CONTENT_LENGTH']) && (int)$_SERVER['CONTENT_LENGTH'] > $maxRequestBody) {
+		http_response_code(413);
+		exit("-1");
+	}
+
+	// per-IP rate limiting runs before the database is touched, so floods never reach MySQL
+	require_once dirname(__FILE__) . "/ratelimit.php";
+	rateLimit_apply();
+}
+
 if(!isset($port))
 	$port = 3306;
     try {

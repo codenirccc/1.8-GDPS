@@ -32,6 +32,48 @@ $maxStatValues = array( //hard caps for stats accepted by updateGJUserScore.php;
 	"moons" => 100000
 );
 
+/*
+	DDoS / DoS protection settings
+	Per-IP request rate limiting runs in src/incl/lib/connection.php on every request,
+	before the database is touched. Storage is file-based (src/data/ratelimit/), no DB
+	writes. Clients that exceed a limit get HTTP 429 + Retry-After + body -1; IPs in the
+	manual blocklist get HTTP 403.
+*/
+$enableRateLimit = true; // false = disable all per-IP rate limiting (not recommended)
+
+// global per-IP sliding-window limit: at most $max requests per $window seconds, then blocked for $block seconds
+$rateLimitGlobal = array('window' => 60, 'max' => 500, 'block' => 60);
+
+// per-endpoint per-IP limits (keyed by script basename); same window/max/block semantics.
+// per-endpoint limits apply on top of the global limit.
+$rateLimitEndpoints = array(
+	'getGJLevels.php'          => array('window' => 60, 'max' => 30,  'block' => 60),
+	'getGJMapPacks.php'        => array('window' => 60, 'max' => 30,  'block' => 60),
+	'getGJCreators.php'        => array('window' => 60, 'max' => 30,  'block' => 60),
+	'getGJScores.php'          => array('window' => 60, 'max' => 60,  'block' => 60),
+	'getGJComments.php'        => array('window' => 60, 'max' => 60,  'block' => 60),
+	'downloadGJLevel.php'      => array('window' => 60, 'max' => 120, 'block' => 60),
+	'uploadGJLevel.php'        => array('window' => 60, 'max' => 15,  'block' => 120),
+	'uploadGJComment.php'      => array('window' => 60, 'max' => 60,  'block' => 60),
+	'deleteGJComment.php'      => array('window' => 60, 'max' => 60,  'block' => 60),
+	'deleteGJLevelUser.php'    => array('window' => 60, 'max' => 60,  'block' => 60),
+	'likeGJItem.php'           => array('window' => 60, 'max' => 60,  'block' => 60),
+	'rateGJLevel.php'          => array('window' => 60, 'max' => 30,  'block' => 60),
+	'rateGJStars.php'          => array('window' => 60, 'max' => 30,  'block' => 60),
+	'reportGJLevel.php'        => array('window' => 60, 'max' => 15,  'block' => 120),
+	'updateGJUserScore.php'    => array('window' => 60, 'max' => 30,  'block' => 120),
+	'accountManagement.php'    => array('window' => 60, 'max' => 30,  'block' => 300) // login/save flow
+);
+
+// manual blocklist file: one IP or CIDR per line, '#' starts a comment
+$rateLimitBlockedIPsFile = __DIR__ . "/../data/blocked_ips.txt";
+
+// maximum accepted HTTP request body size in bytes, enforced in connection.php via Content-Length
+// (0 = disabled). Tune for your level/cloud-save sizes; see php.ini post_max_size in the README.
+$maxRequestBody = 10485760; // 10 MB
+
+$rateLimitPruneChance = 0.01; // probability (0-1) per request that stale rate-limit files are cleaned up
+
 $blockFreeProxies = true; // true = check if person uses free proxy
 $blockCommonVPNs = true; // true = check if person uses a common VPN
 // URLs for IPs of proxies
