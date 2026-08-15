@@ -1,6 +1,25 @@
 <?php
 include_once __DIR__ . "/ip_in_range.php";
 class mainLib {
+	// whitelist of role permission column names that may be interpolated into SQL
+	private $allowedPermissions = array(
+		'roleID', 'priority', 'commandRate', 'commandFeature', 'commandEpic', 'commandUnepic',
+		'commandVerifycoins', 'commandDaily', 'commandWeekly', 'commandDelete', 'commandSetacc',
+		'commandRenameOwn', 'commandRenameAll', 'commandPassOwn', 'commandPassAll',
+		'commandDescriptionOwn', 'commandDescriptionAll', 'commandPublicOwn', 'commandPublicAll',
+		'commandUnlistOwn', 'commandUnlistAll', 'commandSharecpOwn', 'commandSharecpAll',
+		'commandSongOwn', 'commandSongAll', 'profilecommandDiscord', 'actionRateDemon',
+		'actionRateStars', 'actionRateDifficulty', 'actionRequestMod', 'actionSuggestRating',
+		'actionDeleteComment', 'toolLeaderboardsban', 'toolPackcreate', 'toolQuestsCreate',
+		'toolModactions', 'toolSuggestlist', 'dashboardModTools', 'modipCategory', 'isDefault',
+		'commentColor', 'modBadgeLevel'
+	);
+	// validate a permission column name against the whitelist; returns null if not allowed
+	public function validatePermission($permission) {
+		if (!is_string($permission)) return null;
+		if (in_array($permission, $this->allowedPermissions, true)) return $permission;
+		return null;
+	}
 	public function getAudioTrack($id) {
 		$songs = ["Stereo Madness by ForeverBound",
 			"Back on Track by DJVI",
@@ -230,7 +249,7 @@ class mainLib {
 			$register = 0;
 		}
 		
-		$query = $db->prepare("SELECT userID FROM users WHERE extID LIKE BINARY :id");
+		$query = $db->prepare("SELECT userID FROM users WHERE BINARY extID = :id");
 		$query->execute([':id' => $extID]);
 		if ($query->rowCount() > 0) {
 			$userID = $query->fetchColumn();
@@ -263,7 +282,7 @@ class mainLib {
 	}
 	public function getAccountIDFromName($userName) {
 		include __DIR__ . "/connection.php";
-		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName LIKE :usr");
+		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName = :usr LIMIT 1");
 		$query->execute([':usr' => $userName]);
 		if ($query->rowCount() > 0) {
 			return $query->fetchColumn();
@@ -354,7 +373,7 @@ class mainLib {
 		if(strpos($dl, ':') !== false){
 			$dl = urlencode($dl);
 		}
-		return "1~|~".$song["ID"]."~|~2~|~".str_replace("#", "", $song["name"])."~|~3~|~".$song["authorID"]."~|~4~|~".$song["authorName"]."~|~5~|~".$song["size"]."~|~6~|~~|~10~|~".$dl."~|~7~|~~|~8~|~1";
+		return "1~|~".$song["ID"]."~|~2~|~".str_replace(array("#","~","|",":"), "", $song["name"])."~|~3~|~".$song["authorID"]."~|~4~|~".str_replace(array("#","~","|",":"), "", $song["authorName"])."~|~5~|~".$song["size"]."~|~6~|~~|~10~|~".$dl."~|~7~|~~|~8~|~1";
 	}
 	public function sendDiscordPM($discordID, $message) {
 		require __DIR__ . "/../../config/discord.php";
@@ -447,6 +466,8 @@ class mainLib {
 		return 0;
 	}
 	public function getAccountsWithPermission($permission){
+		$permission = $this->validatePermission($permission);
+		if ($permission === null) return array();
 		include __DIR__ . "/connection.php";
 		$query = $db->prepare("SELECT roleID FROM roles WHERE $permission = 1 ORDER BY priority DESC");
 		$query->execute();
@@ -464,6 +485,8 @@ class mainLib {
 	}
 	public function checkPermission($accountID, $permission){
 		if(!is_numeric($accountID)) return false;
+		$permission = $this->validatePermission($permission);
+		if ($permission === null) return false;
 
 		include __DIR__ . "/connection.php";
 		//isAdmin check
@@ -479,7 +502,7 @@ class mainLib {
 		$roleIDarray = $query->fetchAll();
 		$roleIDlist = "";
 		foreach($roleIDarray as &$roleIDobject){
-			$roleIDlist .= $roleIDobject["roleID"] . ",";
+			$roleIDlist .= (int)$roleIDobject["roleID"] . ",";
 		}
 		$roleIDlist = substr($roleIDlist, 0, -1);
 		if($roleIDlist != ""){
@@ -539,6 +562,8 @@ class mainLib {
 		return $_SERVER['REMOTE_ADDR'];
 	}
 	public function checkModIPPermission($permission){
+		$permission = $this->validatePermission($permission);
+		if ($permission === null) return false;
 		include __DIR__ . "/connection.php";
 		$ip = $this->getIP();
 		$query=$db->prepare("SELECT modipCategory FROM modips WHERE IP = :ip");
@@ -591,6 +616,8 @@ class mainLib {
 	}
 	public function getMaxValuePermission($accountID, $permission){
 		if(!is_numeric($accountID)) return false;
+		$permission = $this->validatePermission($permission);
+		if ($permission === null) return 0;
 
 		include __DIR__ . "/connection.php";
 		$maxvalue = 0;
@@ -599,7 +626,7 @@ class mainLib {
 		$roleIDarray = $query->fetchAll();
 		$roleIDlist = "";
 		foreach($roleIDarray as &$roleIDobject){
-			$roleIDlist .= $roleIDobject["roleID"] . ",";
+			$roleIDlist .= (int)$roleIDobject["roleID"] . ",";
 		}
 		$roleIDlist = substr($roleIDlist, 0, -1);
 		if($roleIDlist != ""){
@@ -623,7 +650,7 @@ class mainLib {
 		$roleIDarray = $query->fetchAll();
 		$roleIDlist = "";
 		foreach($roleIDarray as &$roleIDobject){
-			$roleIDlist .= $roleIDobject["roleID"] . ",";
+			$roleIDlist .= (int)$roleIDobject["roleID"] . ",";
 		}
 		$roleIDlist = substr($roleIDlist, 0, -1);
 		if($roleIDlist != ""){

@@ -1,4 +1,5 @@
 <?php
+session_set_cookie_params(array('httponly' => true, 'secure' => !empty($_SERVER['HTTPS']), 'samesite' => 'Lax'));
 session_start();
 if (isset($_POST["userName"]) AND isset($_POST["email"]) AND isset($_POST["password"]) AND isset($_POST["repeatPassword"])){
 	require "../../incl/lib/connection.php";
@@ -34,7 +35,9 @@ if (isset($_POST["userName"]) AND isset($_POST["email"]) AND isset($_POST["passw
 		if ($password != $repeatPassword) {
 			echo 'Passwords do not match. Please try again.';
 		} else {
-			if (isset($_POST["captcha"]) AND $_POST["captcha"] != "" AND strcasecmp(($_SESSION["code"] ?? ""), $_POST["captcha"]) === 0) {
+			$captchaOk = isset($_POST["captcha"]) AND $_POST["captcha"] != "" AND strcasecmp(($_SESSION["code"] ?? ""), $_POST["captcha"]) === 0;
+			unset($_SESSION["code"]);
+			if ($captchaOk) {
 				require_once "../../incl/lib/generatePass.php";
 				$query = $db->prepare("INSERT INTO accounts (userName, password, email, registerDate, isActive, gjp2) VALUES (:userName, :password, :email, :time, 1, :gjp2)");
 				$query->execute([':userName' => $userName, ':password' => password_hash($password, PASSWORD_DEFAULT), ':email' => $email, ':time' => time(), ':gjp2' => GeneratePass::GJP2hash($password)]);

@@ -93,6 +93,60 @@ This fork hardened the endpoints below. Each entry lists the endpoint, why it wa
   - VPN and datacenter CIDR lists (`$vpns` — X4BNet `vpn` and `datacenter` IPv4 ranges), covering free and paid VPN providers as well as paid proxies running on hosting IPs.
 - Blocked requests get HTTP 403. Lists are cached in `src/data/proxycache/` (12h refresh, per-IP result cached 10 min) so downloads happen rarely; a download failure falls back to the stale cache and never blocks everyone. Localhost/private/reserved IPs are always allowed.
 
+## Security fixes (second pass)
+
+### src/incl/scores/updateGJUserScore.php (stat floor + oversized IN-list)
+- **Vulnerability:** two issues. (1) Negative stats (e.g. `stars=-100`) were accepted, so an account could be pushed far below zero; combined with the stats cap this still let a cheated client wreck its own leaderboard row. (2) `dinfo`/`sinfo` (demo/secret info) were stored unbounded and later splatted into `IN (...)` lists in `getGJComments.php` / `getGJUserList.php`, so an oversized value caused a massive SQL list (CPU/DB exhaustion).
+- **Fix:** any reported stat below 0 is rejected (`-1`); `dinfo`/`sinfo` are truncated to 1000 characters.
+
+### src/config/security.php (`$sessionGrants`)
+- **Vulnerability:** with `$sessionGrants = true` (upstream default), a login response granted a 1-hour `isAdmin`/grant session where account actions were performed without the account's GJP — an attacker could obtain it once (e.g. via a leaked login) and impersonate the account for an hour without ever knowing the password.
+- **Fix:** `$sessionGrants` now defaults to `false`, so every account action re-verifies the password (GJP) exactly as 1.8 clients behave.
+
+### src/tools/stats/songList.php, src/incl/lib/mainLib.php `getSongString`, src/tools/bot/songAddBot.php (song metadata XSS/sanitization)
+- **Vulnerability:** the song author name and size were echoed raw into an HTML table (`songList.php`), and were re-served raw in the level-response song string (`getSongString`). A custom client could upload a song whose name/author contained `</td><script>...` and execute JavaScript in the admin panel of any viewer (stored XSS).
+- **Fix:** `songList.php` escapes author/size with `htmlspecialchars(... ENT_QUOTES)`. `getSongString` strips the GD protocol delimiters `# ~ : |` from the name and author name. `songAddBot.php` strips `#~:|` and truncates name/author to 64 chars.
+
+### src/incl/lib/commands.php (verification-key comparison)
+- **Vulnerability:** the 7 verification-key checks in the commands used a loose `==` comparison. PHP's loose comparison converts a numeric string to an integer, so a key like `0e123...` could be coerced; more importantly, string-to-int juggling could make mismatched keys compare equal.
+- **Fix:** all 7 checks now use `hash_equals()` (constant-time, strict string compare).
+
+### src/tools/account/generateKey.php (account enumeration + captcha replay)
+- **Vulnerability:** three issues. (1) "This username is already in use." vs "Incorrect username-password combination." revealed which usernames exist. (2) The captcha session code was not cleared after use, so the same captcha image could be reused to automate the endpoint. (3) A valid/invalid password produced measurably different response times, allowing timing-based password guessing.
+- **Fix:** captcha is validated first and the session code is unset; both failure branches return the identical "Incorrect username-password combination." message; a dummy `password_verify()` equalizes timing regardless of the account's actual hash.
+
+### src/incl/lib/generatePass.php, mainLib.php (LIKE auth lookups)
+- **Vulnerability:** account lookups used `userName LIKE :usr` / `userName LIKE '%usr%'`, so the SQL wildcard `_` in a username matched more than one row (multi-account collision / auth confusion).
+- **Fix:** lookups now use `userName = :userName LIMIT 1`; extID lookups use `extID = BINARY :extID`.
+
+### src/incl/lib/mainLib.php (permission column whitelist)
+- **Vulnerability:** the `$permission` argument was interpolated directly into `SELECT $permission FROM roles ...` (`checkPermission`, `getMaxValuePermission`, `getAccountsWithPermission`, `checkModIPPermission`, `getAccountCommentColor`). Any caller-controlled value became SQL column injection.
+- **Fix:** `validatePermission()` whitelists the argument against the known permission columns; invalid values fail closed. `roleIDlist` values are `(int)`-cast before being joined into `IN (...)`.
+
+### src/tools/account/changePassword.php (cloud save encryption)
+- **Vulnerability:** after changing the account password, the cloud save was written back to disk **in plaintext**, leaving the entire savegame (incl. any sensitive progress) readable by anyone with file access.
+- **Fix:** the save is now decrypted with the old password and re-encrypted with the new password (via the defuse `KeyProtectedByPassword` wrapper), and the new protected key is stored. Plaintext is never written.
+
+### src/tools/account/registerAccount.php (captcha replay)
+- **Vulnerability:** the captcha session code was never invalidated on success or failure, so a single captcha solve could be replayed for unlimited automated registrations.
+- **Fix:** the session code is unset once validated (both in `registerAccount.php` and `generateKey.php`).
+
+### src/incl/comments/deleteGJComment.php (response bug)
+- **Vulnerability:** the response flow echoed `-11`/`11` then fell through and echoed the result string again, producing a corrupted response for the game client and leaking the success/failure path.
+- **Fix:** the flow now uses explicit early `exit()` with a single response string.
+
+### Remaining SQL `IN (...)` lists (intval hardening)
+- **Vulnerability:** several queries joined DB-sourced values into `IN (...)` lists without integer casting (`modActions.php` accounts list, `modActionsBot.php` account list, `getGJLevels.php` gauntlet levels / friends list), so a crafted DB value could inject SQL into the list.
+- **Fix:** all list values are now `array_map('intval', ...)`-cast; the level-name `LIKE` search is bound via `:searchstr` placeholder instead of string interpolation.
+
+### Session cookies (registerAccount.php, generateKey.php, captchaGen.php, userlist.php)
+- **Vulnerability:** session cookies were set without `HttpOnly`/`Secure`/`SameSite`, so they could be stolen via XSS or CSRF and sent over plain HTTP.
+- **Fix:** `session_set_cookie_params()` now sets `httponly`, `secure` (when HTTPS), and `samesite` (`Lax`/`Strict`) before `session_start()` in every session-using page.
+
+### Reflected XSS in admin tools (src/tools/stats/*, src/tools/linkAcc.php, src/tools/levelToGD.php)
+- **Vulnerability:** multiple admin-facing pages echoed DB data or upstream-server responses raw into HTML (`top24h.php`, `noLogIn.php`, `unlisted.php`, `dailyTable.php`, `packTable.php`, `modActions.php`, and the error/debug output of `linkAcc.php`/`levelToGD.php`), enabling stored/reflected XSS in the admin panel.
+- **Fix:** all echoed dynamic values are wrapped in `htmlspecialchars(... ENT_QUOTES)`.
+
 ### Operational notes
 - The above fixes assume a PHP 7.4+/8.x runtime with `mysqlnd`. After deploying, set `$botSecret` and test a level upload/comment/rate flow.
 - Ownership checks on level deletion (`deleteGJLevelUser.php`), comment deletion (`deleteGJComment.php`) and reporting (`reportGJLevel.php`) were reviewed and were already safe (owner/moderator checks with prepared statements); no change was needed there.

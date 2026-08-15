@@ -42,7 +42,7 @@
 	$query->execute([':name' => $name]);
 	$result = $query->fetchAll();
 	foreach ($result as &$song) {
-		echo "<tr><td>" . $song["ID"] . "</td><td>" . htmlspecialchars($song["name"], ENT_QUOTES) . "</td><td>" . $song['authorName'] . "</td><td>" . $song['size'] . "mb</td></tr>";
+		echo "<tr><td>" . $song["ID"] . "</td><td>" . htmlspecialchars($song["name"], ENT_QUOTES) . "</td><td>" . htmlspecialchars($song['authorName'], ENT_QUOTES) . "</td><td>" . htmlspecialchars($song['size'], ENT_QUOTES) . "mb</td></tr>";
 	}
 	?>
 </table>

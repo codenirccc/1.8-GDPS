@@ -4,6 +4,7 @@
 // and the comparison is done against this literal value, so there is no constant or
 // variable an attacker could edit to swap in a different key.
 
+session_set_cookie_params(array('httponly' => true, 'secure' => !empty($_SERVER['HTTPS']), 'samesite' => 'Strict'));
 session_start();
 
 include "../../incl/lib/connection.php";

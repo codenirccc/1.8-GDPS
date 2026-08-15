@@ -59,7 +59,7 @@ if(!empty($_POST["userhere"]) AND !empty($_POST["passhere"]) AND !empty($_POST["
 		}else{
 			echo "RobTop doesn't like you or something...";
 		}
-		exit("<br>Error code: $result");
+		exit("<br>Error code: " . htmlspecialchars($result, ENT_QUOTES));
 	}
 	if(!is_numeric($levelID)){ //checking if the level id is numeric due to possible exploits
 		exit("Invalid levelID");
@@ -115,9 +115,9 @@ if(!empty($_POST["userhere"]) AND !empty($_POST["passhere"]) AND !empty($_POST["
 		}else{
 			echo "RobTop doesn't like you or something... (upload)";
 		}
-		exit("<br>Error code: $result");
+		exit("<br>Error code: " . htmlspecialchars($result, ENT_QUOTES));
 	}
-	echo "Level reuploaded - $result";
+	echo "Level reuploaded - " . htmlspecialchars($result, ENT_QUOTES);
 }else{
 	echo '<form action="levelToGD.php" method="post">Your password for the target server is NOT saved, it\'s used for one-time verification purposes only.
 	<h3>This server</h3>Username: <input type="text" name="userhere"><br>

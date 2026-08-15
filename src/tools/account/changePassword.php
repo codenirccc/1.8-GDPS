@@ -41,8 +41,12 @@ if ($pass == 1) {
 			} catch (Defuse\Crypto\Exception\WrongKeyOrModifiedCiphertextException $ex) {
 				exit("Unable to update save data encryption");	
 			}
-			file_put_contents($saveFile,$saveData);
-			file_put_contents($keyFile,"");
+			// re-encrypt with the new password so the save is never stored in plaintext
+			$new_protected_key = KeyProtectedByPassword::createRandomProtectedKey($newpass);
+			$new_user_key = $new_protected_key->unwrapKey($newpass);
+			$newSaveData = Crypto::encrypt($saveData, $new_user_key);
+			file_put_contents($saveFile,$newSaveData);
+			file_put_contents($keyFile,$new_protected_key->saveToAsciiSafeString());
 		}
 	}
 }else{

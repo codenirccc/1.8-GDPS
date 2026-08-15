@@ -16,7 +16,7 @@ foreach($result as &$pack){
 		$query = $db->prepare("SELECT levelName FROM levels WHERE levelID = :levelID");
 		$query->execute([':levelID' => $lvl]);
 		$levelName = $query->fetchColumn();
-		echo $levelName . ", ";
+		echo htmlspecialchars($levelName, ENT_QUOTES) . ", ";
 	}
 	echo "</td></tr>";
 }
@@ -91,7 +91,7 @@ foreach($result as &$gauntlet){
 		$query = $db->prepare("SELECT levelName FROM levels WHERE levelID = :levelID");
 		$query->execute([':levelID' => $lvl]);
 		$levelName = $query->fetchColumn();
-		echo "$levelName</td>";
+		echo htmlspecialchars($levelName, ENT_QUOTES) . "</td>";
 	}
 	echo "</tr>";
 }

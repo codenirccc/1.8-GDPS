@@ -22,21 +22,22 @@ $commentID = ExploitPatch::remove($_POST["commentID"]);
 $userID = $gs->getUserID($legacyID);
 $query = $db->prepare("DELETE FROM comments WHERE commentID = :commentID AND userID = :userID LIMIT 1");
 $query->execute([':commentID' => $commentID, ':userID' => $userID]);
-if ($query->rowCount() == 0) {
-	// getting level creator account ID
-	$query = $db->prepare("SELECT users.extID FROM comments INNER JOIN levels ON levels.levelID = comments.levelID INNER JOIN users ON levels.userID = users.userID WHERE commentID = :commentID");
-	$query->execute([':commentID' => $commentID]);
-	if ($query->fetchColumn() == $legacyID OR $gs->checkPermission($legacyID, "actionDeleteComment") == 1) {
-		$query = $db->prepare("DELETE FROM comments WHERE commentID = :commentID LIMIT 1");
-		$query->execute([':commentID' => $commentID]);
-		if ($query->rowCount() == 0) {
-			echo "-1";
-		} else {
-			echo "1";
-		}
-	} else {
-		echo "-1";
-	}
+if ($query->rowCount() > 0) {
+	echo "1";
+	exit;
 }
-echo "1";
+// not own comment; check if requester is the level creator or has delete permission
+$query = $db->prepare("SELECT users.extID FROM comments INNER JOIN levels ON levels.levelID = comments.levelID INNER JOIN users ON levels.userID = users.userID WHERE commentID = :commentID");
+$query->execute([':commentID' => $commentID]);
+if ($query->fetchColumn() == $legacyID OR $gs->checkPermission($legacyID, "actionDeleteComment") == 1) {
+	$query = $db->prepare("DELETE FROM comments WHERE commentID = :commentID LIMIT 1");
+	$query->execute([':commentID' => $commentID]);
+	if ($query->rowCount() == 0) {
+		echo "-1";
+	} else {
+		echo "1";
+	}
+} else {
+	echo "-1";
+}
 ?>

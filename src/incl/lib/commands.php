@@ -368,7 +368,7 @@ class Commands {
 				return false;
 			}
 			$verifyKey = $query->fetchColumn();
-			if (!($commentarray[2] == $verifyKey)) {
+			if (!hash_equals($verifyKey, $commentarray[2])) {
 				self::createBotComment("!link error: Verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}
@@ -493,7 +493,7 @@ class Commands {
 				return false;
 			}
 			$verifyKey = $query->fetchColumn();
-			if (!($commentarray[2] == $verifyKey)) {
+			if (!hash_equals($verifyKey, $commentarray[2])) {
 				self::createBotComment("!dsclink error: Verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}
@@ -512,7 +512,7 @@ class Commands {
 					return false;
 				}
 				$oldVerifyKey = $query->fetchColumn();
-				if (!($commentarray[3] == $oldVerifyKey)) {
+				if (!hash_equals($oldVerifyKey, $commentarray[3])) {
 					self::createBotComment("!dsclink error: Old Discord link owner's verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 					return false;
 				}
@@ -580,7 +580,7 @@ class Commands {
 				self::createBotComment("!relink error: Please provide your new account's verification key to link with it.", $userID, $linkNexusLevel);
 				return false;
 			}
-			if (!($commentarray[2] == $newVerifyKey)) {
+			if (!hash_equals($newVerifyKey, $commentarray[2])) {
 				self::createBotComment("!relink error: New account's verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}
@@ -588,7 +588,7 @@ class Commands {
 				self::createBotComment("!relink error: Please provide your old account's verification key to unlink from it.", $userID, $linkNexusLevel);
 				return false;
 			}
-			if (!($commentarray[3] == $oldVerifyKey)) {
+			if (!hash_equals($oldVerifyKey, $commentarray[3])) {
 				self::createBotComment("!relink error: Old account's verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}
@@ -718,7 +718,7 @@ class Commands {
 				self::createBotComment("!dscrelink error: Please provide your new Discord's verification key to link with it.", $userID, $linkNexusLevel);
 				return false;
 			}
-			if (!($commentarray[2] == $newVerifyKey)) {
+			if (!hash_equals($newVerifyKey, $commentarray[2])) {
 				self::createBotComment("!dscrelink error: New Discord's verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}
@@ -726,7 +726,7 @@ class Commands {
 				self::createBotComment("!dscrelink error: Please provide your old Discord's verification key to unlink from it.", $userID, $linkNexusLevel);
 				return false;
 			}
-			if (!($commentarray[3] == $oldVerifyKey)) {
+			if (!hash_equals($oldVerifyKey, $commentarray[3])) {
 				self::createBotComment("!dscrelink error: Old Discord's verification key is incorrect. Please try again.", $userID, $linkNexusLevel);
 				return false;
 			}

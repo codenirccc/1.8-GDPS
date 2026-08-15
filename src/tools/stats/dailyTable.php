@@ -21,12 +21,12 @@ foreach($result as &$daily){
 	$level = $query->fetch();
 	$levelName = $level["levelName"];
 	$userID = $level["userID"];*/
-	echo "<td>$levelName</td>";
+	echo "<td>" . htmlspecialchars($levelName, ENT_QUOTES) . "</td>";
 	//creator name
 	/*$query = $db->prepare("SELECT userName FROM users WHERE userID = :userID");
 	$query->execute([':userID' => $userID]);
 	$creator = $query->fetchColumn();*/
-	echo "<td>$creator</td>";
+	echo "<td>" . htmlspecialchars($creator, ENT_QUOTES) . "</td>";
 	//timestamp
 	$time = date("d/m/Y H:i", $time);
 	echo "<td>$time</td></tr>";

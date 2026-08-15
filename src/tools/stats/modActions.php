@@ -6,7 +6,7 @@
 include "../../incl/lib/connection.php";
 require "../../incl/lib/mainLib.php";
 $gs = new mainLib();
-$accounts = implode(",",$gs->getAccountsWithPermission("toolModactions"));
+$accounts = implode(",", array_map('intval', $gs->getAccountsWithPermission("toolModactions")));
 if($accounts == ""){
 	exit("Error: No accounts with the 'toolModactions' permission have been found");
 }
@@ -22,7 +22,7 @@ foreach($result as &$mod){
 	$query = $db->prepare("SELECT count(*) FROM modactions WHERE account = :id AND type = '1'");
 	$query->execute([':id' => $mod["accountID"]]);
 	$lvlcount = $query->fetchColumn();
-	echo "<tr><td>${mod["userName"]}</td><td>${actionscount}</td><td>${lvlcount}</td><td>${time}</td></tr>";
+	echo "<tr><td>" . htmlspecialchars($mod["userName"], ENT_QUOTES) . "</td><td>${actionscount}</td><td>${lvlcount}</td><td>${time}</td></tr>";
 }
 ?>
 </table>
@@ -107,9 +107,9 @@ foreach($result as &$action){
 	}
 	$time = date("d/m/Y G:i:s", $action["timestamp"]);
 	if($action["type"] == 5 AND $action["value2"] > time()){
-		echo "<tr><td>".$account."</td><td>".$actionname."</td><td>".$value."</td><td>".$value2."</td><td>future</td><td>".$time."</td></tr>";
+		echo "<tr><td>".htmlspecialchars($account, ENT_QUOTES)."</td><td>".htmlspecialchars($actionname, ENT_QUOTES)."</td><td>".htmlspecialchars($value, ENT_QUOTES)."</td><td>".htmlspecialchars($value2, ENT_QUOTES)."</td><td>future</td><td>".$time."</td></tr>";
 	}else{
-		echo "<tr><td>".$account."</td><td>".$actionname."</td><td>".$value."</td><td>".$value2."</td><td>".$action["value3"]."</td><td>".$time."</td></tr>";
+		echo "<tr><td>".htmlspecialchars($account, ENT_QUOTES)."</td><td>".htmlspecialchars($actionname, ENT_QUOTES)."</td><td>".htmlspecialchars($value, ENT_QUOTES)."</td><td>".htmlspecialchars($value2, ENT_QUOTES)."</td><td>".htmlspecialchars($action["value3"], ENT_QUOTES)."</td><td>".$time."</td></tr>";
 	}
 	
 }

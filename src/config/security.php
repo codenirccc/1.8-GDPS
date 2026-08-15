@@ -1,5 +1,5 @@
 <?php
-$sessionGrants = true; //false = GJP check is done every time; true = GJP check is done once per hour; significantly improves performance, slightly descreases security
+$sessionGrants = false; //false = GJP check is done every time; true = GJP check is done once per hour; significantly improves performance, slightly descreases security (an attacker behind the same IP/NAT can impersonate a logged-in account for an hour, and a stolen GJP stays valid for an hour past a password change)
 $unregisteredSubmissions = false; //false = green accounts can't upload levels, appear on the leaderboards etc; true = green accounts can do everything
 $preactivateAccounts = true; //false = acounts need to be activated at tools/account/activateAccount.php; true = accounts can log in immediately
 

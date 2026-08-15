@@ -18,7 +18,7 @@ if(!empty($_POST["userName"]) AND !empty($_POST["password"])){
 			$result = $query->fetchAll();
 			echo '<table border="1"><tr><th>ID</th><th>Name</th></tr>';
 			foreach($result as &$level){
-				echo "<tr><td>".$level["levelID"]."</td><td>".$level["levelName"]."</td></tr>";
+				echo "<tr><td>".$level["levelID"]."</td><td>".htmlspecialchars($level["levelName"], ENT_QUOTES)."</td></tr>";
 			}
 			echo "</table>";
 		}

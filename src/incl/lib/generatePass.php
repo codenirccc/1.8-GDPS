@@ -83,7 +83,7 @@ class GeneratePass
 
 	public static function isGJP2ValidUsrname($userName, $gjp2) {
 		include dirname(__FILE__)."/connection.php";
-		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName LIKE :userName");
+		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName = :userName LIMIT 1");
 		$query->execute([':userName' => $userName]);
 		if($query->rowCount() == 0){
 			return 0;
@@ -118,7 +118,7 @@ class GeneratePass
 	}
 	public static function isValidUsrname($userName, $pass){
 		include dirname(__FILE__)."/connection.php";
-		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName LIKE :userName");
+		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName = :userName LIMIT 1");
 		$query->execute([':userName' => $userName]);
 		if($query->rowCount() == 0){
 			return 0;

@@ -1,4 +1,5 @@
 <?php
+session_set_cookie_params(array('httponly' => true, 'secure' => !empty($_SERVER['HTTPS']), 'samesite' => 'Lax'));
 session_start();
 include "../lib/connection.php";
 // yoinked from 99webTools

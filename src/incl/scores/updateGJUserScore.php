@@ -55,16 +55,18 @@ $color3 = !empty($_POST["color3"]) ? ExploitPatch::remove($_POST["color3"]) : 0;
 $accSwing = !empty($_POST["accSwing"]) ? ExploitPatch::remove($_POST["accSwing"]) : 0;
 $accJetpack = !empty($_POST["accJetpack"]) ? ExploitPatch::remove($_POST["accJetpack"]) : 0;
 $dinfo = !empty($_POST["dinfo"]) ? ExploitPatch::numbercolon($_POST["dinfo"]) : '';
+$dinfo = substr($dinfo, 0, 1000);
 $dinfow = !empty($_POST["dinfow"]) ? ExploitPatch::number($_POST["dinfow"]) : 0;
 $dinfog = !empty($_POST["dinfog"]) ? ExploitPatch::number($_POST["dinfog"]) : 0;
 $sinfo = !empty($_POST["sinfo"]) ? ExploitPatch::numbercolon($_POST["sinfo"]) : '';
+$sinfo = substr($sinfo, 0, 1000);
 $sinfod = !empty($_POST["sinfod"]) ? ExploitPatch::number($_POST["sinfod"]) : 0;
 $sinfog = !empty($_POST["sinfog"]) ? ExploitPatch::number($_POST["sinfog"]) : 0;
 
 // hard caps on the stats an account can report, preventing fabricated leaderboards
 foreach ($maxStatValues as $stat => $cap) {
 	if (!is_numeric($$stat)) $$stat = 0;
-	if ($$stat > $cap) exit("-1");
+	if ($$stat > $cap OR $$stat < 0) exit("-1");
 }
 
 $query = $db->prepare("SELECT stars,coins,demons,userCoins,diamonds,moons FROM users WHERE userID=:userID LIMIT 1"); //getting differences

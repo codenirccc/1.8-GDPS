@@ -15,7 +15,7 @@ foreach($result as &$account){
 	$query->execute([':accountID' => $account["accountID"]]);
 	if($query->fetchColumn() == 0){
 		$register = date("d/m/Y G:i:s", $account["registerDate"]);
-		echo "<tr><td>$x</td><td>".$account["accountID"] . "</td><td>" . $account["userName"] . "</td><td>$register</td>";
+		echo "<tr><td>$x</td><td>".$account["accountID"] . "</td><td>" . htmlspecialchars($account["userName"], ENT_QUOTES) . "</td><td>$register</td>";
 		ob_flush();
 		flush();
 		$time = time() - 2592000;

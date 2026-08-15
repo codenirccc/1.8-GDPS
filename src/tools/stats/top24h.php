@@ -11,7 +11,7 @@ $query->execute([':time' => $time]);
 $result = $query->fetchAll();
 foreach($result as &$gain){
 	$x++;
-	echo "<tr><td>$x</td><td>${gain['userID']}</td><td>${gain['userName']}</td><td>${gain['stars']}</td></tr>";
+	echo "<tr><td>$x</td><td>${gain['userID']}</td><td>" . htmlspecialchars($gain['userName'], ENT_QUOTES) . "</td><td>${gain['stars']}</td></tr>";
 }
 ?>
 </table>

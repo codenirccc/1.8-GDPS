@@ -17,7 +17,7 @@ foreach($result as &$role){
 		$accountlist[] = $user["accountID"];
 	}
 }
-$accountlist = implode(",", $accountlist);
+$accountlist = implode(",", array_map('intval', $accountlist));
 $query = $db->prepare("SELECT accountID,userName,discordID FROM accounts WHERE accountID IN($accountlist)");
 $query->execute();
 $result = $query->fetchAll();

@@ -1,4 +1,5 @@
 <?php
+session_set_cookie_params(array('httponly' => true, 'secure' => !empty($_SERVER['HTTPS']), 'samesite' => 'Lax'));
 session_start();
 if (isset($_POST["userName"]) AND isset($_POST["password"]) AND isset($_POST["captcha"])) {
 	require "../../incl/lib/connection.php";
@@ -8,13 +9,19 @@ if (isset($_POST["userName"]) AND isset($_POST["password"]) AND isset($_POST["ca
 	$ep = new exploitPatch();
 	$userName = $ep->remove($_POST["userName"]);
 	$password = $_POST["password"];
-	$query = $db->prepare("SELECT accountID FROM accounts WHERE userName = :userName");
-	$query->execute([':userName' => $userName]);
-	if ($query->rowCount() == 0) {
-		echo "Non-existent account. Please try again.";
+	$captchaOk = ($_POST["captcha"] != "" AND strcasecmp(($_SESSION["code"] ?? ""), $_POST["captcha"]) === 0);
+	unset($_SESSION["code"]);
+	if (!$captchaOk) {
+		echo "Captcha check failed. Please try again.";
 	} else {
-		$accountID = $query->fetchColumn();
-		if ($_POST["captcha"] != "" AND strcasecmp(($_SESSION["code"] ?? ""), $_POST["captcha"]) === 0) {
+		$query = $db->prepare("SELECT accountID FROM accounts WHERE userName = :userName LIMIT 1");
+		$query->execute([':userName' => $userName]);
+		if ($query->rowCount() == 0) {
+			// equalize timing with a dummy password check so account existence can't be inferred
+			password_verify($password, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi');
+			echo "Incorrect username-password combination. Please try again.";
+		} else {
+			$accountID = $query->fetchColumn();
 			if ($gp->isValid($accountID, $password)) {
 				require_once "../../incl/lib/mainLib.php";
 				$gs = new mainLib();
@@ -24,8 +31,6 @@ if (isset($_POST["userName"]) AND isset($_POST["password"]) AND isset($_POST["ca
 			} else {
 				echo "Incorrect username-password combination. Please try again.";
 			}
-		} else {
-			echo "Captcha check failed. Please try again.";
 		}
 	}
 	echo "<br><br>";

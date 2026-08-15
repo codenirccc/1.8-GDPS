@@ -42,10 +42,10 @@ if(!empty($_POST["userhere"]) AND !empty($_POST["passhere"]) AND !empty($_POST["
 			}else{
 				echo "RobTop doesn't like you or something...";
 			}
-			echo "<br>Error code: $result";
+			echo "<br>Error code: " . htmlspecialchars($result, ENT_QUOTES);
 		}else{
 			if(($_POST["debug"] ?? 0) == 1){
-				echo "<br>$result<br>";
+				echo "<br>" . htmlspecialchars($result, ENT_QUOTES) . "<br>";
 			}
 			$parsedurl = parse_url($url);
 			if($parsedurl["host"] == $_SERVER['SERVER_NAME']){

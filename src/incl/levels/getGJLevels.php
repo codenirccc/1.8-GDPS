@@ -19,6 +19,7 @@ if (!$linkNexusLevel) {
 $lvlstring = ""; $userstring = ""; $songsstring = ""; $lvlsmultistring = []; $epicParams = []; $str = ""; $order = "uploadDate";
 $orderenabled = true; $ordergauntlet = false; $isIDSearch = false;
 $params = array("unlisted = 0");
+$bindParams = array();
 $morejoins = "";
 
 if(!empty($_POST["gameVersion"])){
@@ -95,7 +96,7 @@ if(!empty($_POST["gauntlet"])){
 	$query=$db->prepare("SELECT * FROM gauntlets WHERE ID = :gauntlet");
 	$query->execute([':gauntlet' => $gauntlet]);
 	$actualgauntlet = $query->fetch();
-	$str = $actualgauntlet["level1"].",".$actualgauntlet["level2"].",".$actualgauntlet["level3"].",".$actualgauntlet["level4"].",".$actualgauntlet["level5"];
+	$str = implode(",", array_map('intval', array($actualgauntlet["level1"], $actualgauntlet["level2"], $actualgauntlet["level3"], $actualgauntlet["level4"], $actualgauntlet["level5"])));
 	if($str == "" OR $str == null) $str = "-1";
 	$params[] = "levelID IN ($str)";
 	$type = -1;
@@ -179,8 +180,8 @@ switch($type){
 				$isIDSearch = true;
 			}else{
 				if(strlen($str) > 64) exit("-1");
-				$str = addcslashes($str, "%_\\");
-				$params[] = "levelName LIKE '%$str%'";
+				$params[] = "levelName LIKE CONCAT('%', :searchstr, '%')";
+				$bindParams[':searchstr'] = $str;
 			}
 		}
 		break;
@@ -233,7 +234,7 @@ switch($type){
 	case 13: //FRIENDS
 		$accountID = GJPCheck::getAccountIDOrDie();
 		$peoplearray = $gs->getFriends($accountID);
-		$whereor = implode(",", $peoplearray);
+		$whereor = implode(",", array_map('intval', $peoplearray));
 		if($whereor == "") $whereor = "-1";
 		$params[] = "users.extID IN ($whereor)";
 		break;
@@ -275,9 +276,9 @@ if($order){
 $query .= " LIMIT 10 OFFSET $offset";
 $countquery = "SELECT count(*) $querybase";
 $query = $db->prepare($query);
-$query->execute();
+$query->execute($bindParams);
 $countquery = $db->prepare($countquery);
-$countquery->execute();
+$countquery->execute($bindParams);
 $totallvlcount = $countquery->fetchColumn();
 $result = $query->fetchAll();
 $levelcount = $query->rowCount();
